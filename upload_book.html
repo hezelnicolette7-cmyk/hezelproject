@@ -8,6 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- PDF.js library for rendering PDFs in the browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // Tell PDF.js where to find its worker script
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -48,13 +54,13 @@
             <div class="flex justify-between items-center py-6">
                 <div class="text-3xl font-bold font-serif text-slate-800 flex items-center">
                     <span class="mr-2 text-4xl">📖</span>
-                    <a href="index.html">Hezera</a>
-                </di>
+                    <a href="bookstore.html">Hezera</a>
+                </div>
                 <nav class="hidden md:flex items-center space-x-8">
-                    <a href="index.html" class="text-slate-700 hover:text-orange-800 nav-link">Home</a>
+                    <a href="bookstore.html" class="text-slate-700 hover:text-orange-800 nav-link">Home</a>
                 </nav>
                 <div class="flex items-center space-x-4">
-                    <a href="shopingcart.html" class="text-slate-700 hover:text-orange-800 relative transition-colors">
+                    <a href="shopping_cart.html" class="text-slate-700 hover:text-orange-800 relative transition-colors">
                         <span class="text-2xl">🛒</span>
                         <span id="cart-count" class="absolute -top-1 -right-2 bg-red-600 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">0</span>
                     </a>
@@ -92,10 +98,17 @@
                             <option value="Other">Other</option>
                         </select>
                     </div>
+
+                    <!-- New file input for PDF and preview area -->
                     <div>
-                        <label for="img" class="block text-slate-700 font-medium mb-2">Image URL</label>
-                        <input type="url" id="img" name="img" placeholder="https://placehold.co/300x450" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <label for="pdf-file" class="block text-slate-700 font-medium mb-2">Upload PDF Document</label>
+                        <input type="file" id="pdf-file" name="pdf" accept=".pdf" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                     </div>
+                    <div id="pdf-preview-container" class="mt-4 flex justify-center items-center h-64 border border-dashed border-slate-300 rounded-lg overflow-hidden relative">
+                        <span class="text-slate-400 text-center italic">PDF thumbnail will appear here</span>
+                        <img id="pdf-thumbnail" src="" alt="PDF thumbnail" class="hidden object-contain max-h-full max-w-full">
+                    </div>
+
                     <button type="submit" class="glossy-btn w-full text-center inline-block bg-orange-600 text-white font-semibold py-3 mt-8 rounded-lg shadow-md hover:bg-orange-700 transition-colors">
                         Add Book
                     </button>
@@ -111,19 +124,82 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('upload-form');
+            const pdfInput = document.getElementById('pdf-file');
+            const pdfThumbnail = document.getElementById('pdf-thumbnail');
+            const previewContainer = document.getElementById('pdf-preview-container');
             const toast = document.getElementById('toast');
-            
+            let base64Image = null;
+
+            // Handle PDF file selection and generate thumbnail
+            pdfInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file || file.type !== 'application/pdf' || file.size === 0) {
+                    base64Image = null;
+                    pdfThumbnail.classList.add('hidden');
+                    previewContainer.innerHTML = '<span class="text-red-500 text-center italic">Please select a valid, non-empty PDF file.</span>';
+                    return;
+                }
+
+                // Show loading state
+                previewContainer.innerHTML = '<div class="flex flex-col items-center justify-center"><svg class="animate-spin h-8 w-8 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span class="mt-2 text-slate-500">Loading thumbnail...</span></div>';
+                pdfThumbnail.classList.add('hidden');
+
+                const fileReader = new FileReader();
+                fileReader.onload = async () => {
+                    const typedarray = new Uint8Array(this.result);
+                    try {
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        const page = await pdf.getPage(1);
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        
+                        // Get the data URL of the canvas image
+                        base64Image = canvas.toDataURL('image/png');
+                        pdfThumbnail.src = base64Image;
+                        pdfThumbnail.classList.remove('hidden');
+                        previewContainer.innerHTML = '';
+                        previewContainer.appendChild(pdfThumbnail);
+                    } catch (error) {
+                        console.error('Error rendering PDF:', error);
+                        base64Image = null;
+                        // Provide a more specific error message based on the error received
+                        let errorMessage = 'Error loading PDF. Please try a different file.';
+                        if (error.message && error.message.includes('The PDF file is empty')) {
+                           errorMessage = 'The PDF file is empty or corrupted. Please try a different file.';
+                        }
+                        previewContainer.innerHTML = `<span class="text-red-500 text-center italic">${errorMessage}</span>`;
+                    }
+                };
+                fileReader.readAsArrayBuffer(file);
+            });
+
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
 
+                if (!base64Image) {
+                    previewContainer.innerHTML = '<span class="text-red-500 text-center italic">Please upload a valid PDF file first.</span>';
+                    return;
+                }
+
                 const newBook = {
-                    id: Date.now().toString(), // Unique ID for the new book
+                    id: Date.now().toString(),
                     title: document.getElementById('title').value,
                     author: document.getElementById('author').value,
                     price: parseFloat(document.getElementById('price').value),
                     category: document.getElementById('category').value,
-                    img: document.getElementById('img').value,
+                    img: base64Image, // Use the Base64 image data for the thumbnail
                 };
+
+                // For a real-world application, you would upload the PDF file
+                // to a dedicated storage service like Firebase Storage or Google Cloud Storage.
+                // The URL of the stored file would then be saved in a database like Firestore.
+                // For this example, we're just storing the thumbnail in localStor
 
                 let uploadedBooks = JSON.parse(localStorage.getItem('uploaded_books')) || [];
                 uploadedBooks.push(newBook);
@@ -131,7 +207,6 @@
 
                 showToast();
 
-                // Redirect to the bookstore page after a short delay
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
@@ -148,5 +223,5 @@
         });
     </script>
 </body>
-</html>
-
+    </html>
+    
