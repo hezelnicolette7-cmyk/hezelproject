@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booken - Shopping Cart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            background-image: url('https://www.transparenttextures.com/patterns/notebook.png'), url('https://images.unsplash.com/photo-1548810620-1b77f985a975?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fGJvb2ttYXJrfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=800&q=60');
+            background-repeat: repeat, no-repeat;
+            background-position: center, right bottom;
+            background-size: auto, 300px;
+            background-attachment: fixed;
+            background-color: #E2D5C7;
+        }
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .glossy-btn {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .glossy-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -75%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.4));
+            transform: skewX(-20deg);
+            transition: transform 0.3s ease-in-out;
+        }
+        .glossy-btn:hover::before {
+            transform: skewX(-20deg) translateX(150%);
+        }
+        /* Modal-specific styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        .modal-content {
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased bg-gradient-to-br from-[#E2D5C7] to-[#D4C7B5]">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-sm fixed top-0 left-0 w-full z-10 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="text-3xl font-bold font-serif text-slate-800 flex items-center">
+                    <span class="mr-2 text-4xl">📖</span>
+                    <a href="bookstore.html">Booken</a>
+                </div>
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-slate-700 hover:text-orange-800 nav-link">Home</a>
+                    <a href="#" class="text-slate-700 hover:text-orange-800 nav-link">About</a>
+                    <a href="#" class="text-slate-700 hover:text-orange-800 nav-link">Contact</a>
+                </nav>
+                <div class="flex items-center space-x-4">
+                    <a href="signup.html" class="hidden sm:inline-block bg-white text-slate-800 font-semibold py-2 px-6 rounded-lg shadow-sm hover:bg-slate-100 transition-colors">Login</a>
+                    <a href="shopping_cart.html" class="text-slate-700 hover:text-orange-800 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.195 1.45.569 1.45H19.01M17 19a2 2 0 11-4 0 2 2 0 014 0zm-2 0a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Section -->
+    <main class="pt-32 pb-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
+            <div class="bg-white/60 backdrop-blur-md rounded-lg p-8 md:p-12 shadow-xl">
+                <h1 class="text-4xl font-serif font-bold text-slate-900 text-center mb-12">Shopping Cart</h1>
+                
+                <!-- Cart Items List -->
+                <div class="space-y-6 mb-8" id="cart-items-container">
+                    <!-- Cart items will be dynamically inserted here -->
+                </div>
+
+                <!-- Order Summary -->
+                <div class="bg-white/50 backdrop-blur-sm rounded-lg p-6 shadow-sm">
+                    <h2 class="text-2xl font-semibold mb-4">Order Summary</h2>
+                    <div class="flex justify-between mb-2">
+                        <span>Subtotal</span>
+                        <span id="cart-subtotal">$0.00</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-lg pt-4 border-t border-slate-300 mt-4">
+                        <span>Order Total</span>
+                        <span id="cart-total">$0.00</span>
+                    </div>
+                    <button onclick="showCheckoutModal()" class="glossy-btn w-full text-center inline-block bg-orange-600 text-white font-semibold py-3 mt-8 rounded-lg shadow-md hover:bg-orange-700 transition-colors">
+                        Proceed to Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- The Checkout Modal -->
+    <div id="checkoutModal" class="modal-overlay hidden">
+        <div class="modal-content bg-white/80 backdrop-blur-md rounded-lg p-8 md:p-12 shadow-xl max-w-lg w-full">
+            <div class="flex justify-end">
+                <button onclick="hideCheckoutModal()" class="text-slate-400 hover:text-slate-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <h1 class="text-4xl font-serif font-bold text-slate-900 text-center mb-12">Checkout</h1>
+            <h2 class="text-3xl font-serif font-bold text-slate-900 mb-6 text-center">Your Details</h2>
+            <form>
+                <div class="mb-4">
+                    <label for="name" class="block text-slate-700 font-medium mb-2">Name</label>
+                    <input type="text" id="name" name="name" placeholder="John Doe" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div class="mb-4">
+                    <label for="email" class="block text-slate-700 font-medium mb-2">Email</label>
+                    <input type="email" id="email" name="email" placeholder="john.doe@example.com" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <div class="mb-6">
+                    <label for="phone" class="block text-slate-700 font-medium mb-2">Phone</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+1 (555) 123-4567" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                </div>
+                <a href="order_summary.html" class="glossy-btn w-full text-center inline-block bg-orange-600 text-white font-semibold py-3 mt-8 rounded-lg shadow-md hover:bg-orange-700 transition-colors">
+                    Proceed to Payment
+                </a>
+            </form>
+        </div>
+    </div>
+    
+    <!-- JavaScript to handle modal and cart logic -->
+    <script>
+        const checkoutModal = document.getElementById('checkoutModal');
+
+        function showCheckoutModal() {
+            checkoutModal.classList.remove('hidden');
+        }
+
+        function hideCheckoutModal() {
+            checkoutModal.classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const cartItemsContainer = document.getElementById('cart-items-container');
+            const cartSubtotalElement = document.getElementById('cart-subtotal');
+            const cartTotalElement = document.getElementById('cart-total');
+
+            // Function to render the cart
+            function renderCart() {
+                let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                cartItemsContainer.innerHTML = ''; // Clear previous content
+
+                if (cart.length === 0) {
+                    cartItemsContainer.innerHTML = `
+                        <div class="text-center py-16 text-slate-500 text-lg">
+                            <span class="text-6xl mb-4 block">🛒</span>
+                            Your cart is empty. Go back and find some books!
+                        </div>
+                    `;
+                    cartSubtotalElement.textContent = '$0.00';
+                    cartTotalElement.textContent = '$0.00';
+                    return;
+                }
+
+                let subtotal = 0;
+                cart.forEach((book, index) => {
+                    const itemSubtotal = book.price * (book.quantity || 1);
+                    subtotal += itemSubtotal;
+                    
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 p-4 rounded-lg bg-white shadow-sm';
+                    itemElement.innerHTML = `
+                        <img src="${book.img}" alt="${book.title}" class="w-24 h-32 object-cover rounded-lg shadow-md">
+                        <div class="flex-grow text-center sm:text-left">
+                            <h3 class="font-semibold text-slate-800">${book.title}</h3>
+                            <p class="text-sm text-slate-500">${book.author}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="quantity-btn decrease bg-slate-200 text-slate-700 w-8 h-8 rounded-full hover:bg-slate-300 transition-colors" data-index="${index}">-</button>
+                            <span class="text-lg font-bold w-8 text-center">${book.quantity}</span>
+                            <button class="quantity-btn increase bg-slate-200 text-slate-700 w-8 h-8 rounded-full hover:bg-slate-300 transition-colors" data-index="${index}">+</button>
+                        </div>
+                        <p class="font-bold text-slate-900 w-24 text-center sm:text-right">$${itemSubtotal.toFixed(2)}</p>
+                        <button class="remove-item bg-red-100 text-red-600 rounded-full p-2 hover:bg-red-600 hover:text-white transition-colors" data-index="${index}">
+                            <span class="text-lg">❌</span>
+                        </button>
+                    `;
+                    cartItemsContainer.appendChild(itemElement);
+                });
+
+                cartSubtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+                cartTotalElement.textContent = `$${subtotal.toFixed(2)}`;
+                addEventListeners();
+            }
+
+            function addEventListeners() {
+                // Remove item event listener
+                document.querySelectorAll('.remove-item').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const indexToRemove = parseInt(e.currentTarget.dataset.index, 10);
+                        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                        cart.splice(indexToRemove, 1);
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        renderCart();
+                    });
+                });
+
+                // Quantity button event listeners
+                document.querySelectorAll('.quantity-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const index = parseInt(e.currentTarget.dataset.index, 10);
+                        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                        
+                        if (e.currentTarget.classList.contains('increase')) {
+                            cart[index].quantity++;
+                        } else if (e.currentTarget.classList.contains('decrease')) {
+                            if (cart[index].quantity > 1) {
+                                cart[index].quantity--;
+                            } else {
+                                // If quantity is 1 and user clicks decrease, remove the item
+                                cart.splice(index, 1);
+                            }
+                        }
+                        
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        renderCart();
+                    });
+                });
+            }
+
+            renderCart();
+        });
+    </script>
+</body>
+</html>
